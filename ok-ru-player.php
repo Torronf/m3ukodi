@@ -98,3 +98,4 @@ if (strpos($_SERVER['QUERY_STRING'],"ok.ru") !==false) {
   } 
 }
   echo "URL No Valida";
+?>
