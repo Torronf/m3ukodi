@@ -78,7 +78,7 @@ https://m3ukodi.com/developer/twich/twich_player.php?xt_t419r id=833835522
 https://m3ukodi.com/developer/twich/twich_helix.php?ft10x02k
 */
 $channel=$_SERVER['QUERY_STRING'];
-arch_php();
+
 $Client_Id='kimne78kx3ncx6brgo4mv6wki5h1ko'; // With 
 
 $headers = array(
