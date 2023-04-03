@@ -52,7 +52,7 @@ function cUrlGetData($url,$headers=null,$postFields=null,$head=null,$proxies=nul
 				{
 					curl_setopt($ch, CURLOPT_HEADER, $head);
 					curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-	  $head_data = curl_getinfo($ch, CURLINFO_HEADER_OUT);
+				$head_data = curl_getinfo($ch, CURLINFO_HEADER_OUT);
 				}			
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 				curl_setopt($ch, CURLOPT_ENCODING , '');
