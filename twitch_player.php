@@ -79,7 +79,7 @@ https://m3ukodi.com/developer/twich/twich_helix.php?ft10x02k
 */
 $channel=$_SERVER['QUERY_STRING'];
 
-$Client_Id='kimne78kx3ncx6brgo4mv6wki5h1ko'; // With 
+$Client_Id='kimne78kx3ncx6brgo4mv6wki5h1ko'; // Este se optine entrando a cualquier video o streaming y se saca del SOURCE de la pagina.
 
 $headers = array(
    'Accept: */*',
