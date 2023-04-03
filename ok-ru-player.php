@@ -76,21 +76,25 @@ if (strpos($_SERVER['QUERY_STRING'],"ok.ru") !==false) {
     'Referer: https://ok.ru/',
 	  'User-Agent:Mozilla/5.0(Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.27 Mozilla/5.0(Linux;Android 7.1.2;ro;RO;MXQ-4K Build/MXQ-4K) MXPlayer/1.8.10'
   ];
+	
   $ok_ru_dat=json_decode(cUrlGetData($url,$headers,$postFields),true);
+						
+		header("Content-type: application/x-mpegURL");
+		header("Content-Type: video/x-mpegURL");
+		header("Content-Disposition: inline; filename=\"m3ukodi.m3u\"");
 
   if(!empty($ok_ru_dat['hlsMasterPlaylistUrl'])){
-      header("Location:".rtrim($ok_ru_dat['hlsMasterPlaylistUrl']));
+      echo cUrlGetData(rtrim($ok_ru_dat['hlsMasterPlaylistUrl']),$headers);
       exit;
   }  
 
    if(!empty($ok_ru_dat['hlsManifestUrl'])){
-      header("Location:".rtrim($ok_ru_dat['hlsManifestUrl']));
+      echo cUrlGetData(rtrim($ok_ru_dat['hlsManifestUrl']));
       exit;
   } 
     if(!empty($ok_ru_dat['video'])){
-      header("Location:".rtrim($ok_ru_dat['video'][4]));
+      echo cUrlGetData(rtrim($ok_ru_dat['video'][4]));
     exit;
   } 
 }
   echo "URL No Valida";
-?>
