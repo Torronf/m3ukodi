@@ -83,7 +83,9 @@ if (isset($_SERVER['QUERY_STRING']) && preg_match('/d\/([a-zA-Z0-9_]{5,33})/u', 
 					header("Access-Control-Allow-Origin: *");
 					header("Content-type: application/vnd.apple.mpegurl");		
 					header('Location: ' . filter_var($object['downloadUrl'], FILTER_SANITIZE_URL));
-				}
+				}elseif(($httpCode >= 400 && $httpCode < 500)||($object['disposition']=="QUOTA_EXCEEDED")){
+					die("Cuota Excedida.. Trate mas tarde o busque otra URL valida.")
+			}
 	
 }else{
   header('HTTP/1.0 400 Bad Request');
