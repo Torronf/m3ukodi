@@ -1,5 +1,4 @@
 <?php
-
 /**
 Función de descarga de archivos en PHP.
     Versión 1.4
