@@ -88,20 +88,20 @@ if (empty($_SERVER['QUERY_STRING']) || empty($_SERVER['QUERY_STRING'])) {
 	preg_match_all("/<td><a href=\"([^\"]+)\">(.*?)<\/a><.*\/td>/", $data_page, $data_matc,PREG_SET_ORDER);
 	unset($data_matc[0]);
 	echo "#EXTM3U".PHP_EOL;
-				foreach($data_matc as &$contenido) {
-							$ch_name=simbo($contenido[2]);
-							$ch_logo='https://i.imgur.com/DNh8m7a.png';						
-							$ch_host=parse_url($root, PHP_URL_HOST);
-							$ch_ua='Chrome/61.0.3163.100';
-								
-									echo '#EXTGRP:MOVIES'.PHP_EOL;
-									echo '#EXTVLCOPT:http-referrer='.$ch_host.PHP_EOL;
-									echo '#EXTVLCOPT:network-caching=1000'.PHP_EOL;
-									echo '#EXTVLCOPT:audio-track="es-ES"'.PHP_EOL;
-									echo '#EXTVLCOPT:http-user-agent='.$ch_ua.PHP_EOL;
-									echo '#EXTVLCOPT--http-reconnect=true'.PHP_EOL;
-									echo '#EXTINF:0 type="movie" group-title="MOVIES" group-logo="'.$ch_logo.'" tvg-logo="'.$ch_logo.'",'.strtoupper($ch_name).PHP_EOL;
-									echo rtrim($root.$contenido[1]).PHP_EOL;	
-				};			
-};
+		foreach($data_matc as &$contenido) {
+			$ch_name=simbo($contenido[2]);
+			$ch_logo='https://i.imgur.com/DNh8m7a.png';						
+			$ch_host=parse_url($root, PHP_URL_HOST);
+			$ch_ua='Chrome/61.0.3163.100';
+
+				echo '#EXTGRP:MOVIES'.PHP_EOL;
+				echo '#EXTVLCOPT:http-referrer='.$ch_host.PHP_EOL;
+				echo '#EXTVLCOPT:network-caching=1000'.PHP_EOL;
+				echo '#EXTVLCOPT:audio-track="es-ES"'.PHP_EOL;
+				echo '#EXTVLCOPT:http-user-agent='.$ch_ua.PHP_EOL;
+				echo '#EXTVLCOPT--http-reconnect=true'.PHP_EOL;
+				echo '#EXTINF:0 type="movie" group-title="MOVIES" group-logo="'.$ch_logo.'" tvg-logo="'.$ch_logo.'",'.strtoupper($ch_name).PHP_EOL;
+				echo rtrim($root.$contenido[1]).PHP_EOL;	
+		};			
+	};
 ?>
