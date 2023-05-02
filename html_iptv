@@ -1,0 +1,107 @@
+<?php
+//*****************************************************
+//Cortesia de:"@M3uKodi Telegram Group"
+//Fecha : 02/05/2022       
+//WebSite:https://www.m3ukodi.com
+//Mail:m3ukodi@m3ukodi.com
+//Donaciones:https://paypal.me/m3ukodi?locale.x=es_XC
+//**************************************
+//https://m3ukodi.com/developer/html_iptv/html_iptv.php?http://51.81.221.34/Movies/Estrenos2021mp4/
+
+ini_set("display_errors",1);
+ini_set("memory_limit","1024M");
+ini_set('upload_max_filesize', '500M');
+ini_set('post_max_size', '5000M');
+ini_set('max_input_time', 300);
+ini_set('max_execution_time', 0);
+ini_set('allow_url_include', 'On');
+ignore_user_abort(true);
+clearstatcache();
+header("X-Robots-Tag: noindex, nofollow", true);
+header("Content-Type: text/plain");	
+
+ob_start();
+function cUrlGetData($url,$headers=null,$postFields=null,$head=null,$proxies=null,$cookie = null) {
+
+				$ch = curl_init($url);
+				$timeout = 10;
+				curl_setopt($ch, CURLOPT_URL, $url);
+				
+				if ($postFields && !empty($postFields))
+				{
+					curl_setopt($ch, CURLOPT_POST, 1);
+					curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+				}   
+				if ($headers && !empty($headers)) 
+				{
+					curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);					
+				}				
+				if ($proxies && !empty($proxies)) 
+				{
+					curl_setopt($url, CURLOPT_PROXY, $proxies);
+					curl_setopt($url, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+					curl_setopt($url, CURLOPT_HTTPPROXYTUNNEL, 0); 
+				}
+				if ($cookie && !empty($cookie)) 
+				{
+					//curl_setopt($ch, CURLOPT_COOKIESESSION, 1);
+					//curl_setopt($ch, CURLOPT_COOKIEFILE, realpath(dirname(__FILE__)) . '/m3ukodi.txt');//Activo para Data
+					curl_setopt($ch, CURLOPT_COOKIEJAR, realpath(dirname(__FILE__)) . '/m3ukodi.txt'); //Activo Para Login
+				}
+				if ($head && !empty($head)) 
+				{
+					curl_setopt($ch, CURLOPT_HEADER, $head);
+					curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+	  $head_data = curl_getinfo($ch, CURLINFO_HEADER_OUT);
+				}			
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($ch, CURLOPT_ENCODING , '');
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+				curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+				$data = curl_exec($ch);
+    
+    if (curl_errno($ch)) 
+    {
+        echo 'Error:' . curl_error($ch);
+    }
+
+    curl_close($ch);
+    return $data;
+}
+function simbo($title){
+	$search = array ('ñ', 'á', 'é', 'í', 'ó', 'ú', 'Ñ', 'Á', 'É', 'Í', 'Ó', 'Ú');
+	$replace = array ('n', 'a', 'e', 'i', 'o', 'u', 'N', 'A', 'E', 'I', 'O', 'U');
+	$title = str_replace($search, $replace, $title);
+	return $title; 
+}
+
+if (empty($_SERVER['QUERY_STRING']) || empty($_SERVER['QUERY_STRING'])) {
+   header('HTTP/1.0 400 Bad Request');
+   print("Parametros Invalidos o Requeridos");
+   die();
+}else{
+	$root=rtrim($_SERVER['QUERY_STRING']);
+	$data_page=cUrlGetData($root);
+	preg_match_all("/<td><a href=\"([^\"]+)\">(.*?)<\/a><.*\/td>/", $data_page, $data_matc,PREG_SET_ORDER);
+	unset($data_matc[0]);
+	echo "#EXTM3U".PHP_EOL;
+				foreach($data_matc as &$contenido) {
+							$ch_name=simbo($contenido[2]);
+							$ch_logo='https://i.imgur.com/DNh8m7a.png';						
+							$ch_host=parse_url($root, PHP_URL_HOST);
+							$ch_ua='Chrome/61.0.3163.100';
+								
+									echo '#EXTGRP:MOVIES'.PHP_EOL;
+									echo '#EXTVLCOPT:http-referrer='.$ch_host.PHP_EOL;
+									echo '#EXTVLCOPT:network-caching=1000'.PHP_EOL;
+									echo '#EXTVLCOPT:audio-track="es-ES"'.PHP_EOL;
+									echo '#EXTVLCOPT:http-user-agent='.$ch_ua.PHP_EOL;
+									echo '#EXTVLCOPT--http-reconnect=true'.PHP_EOL;
+									echo '#EXTINF:0 type="movie" group-title="MOVIES" group-logo="'.$ch_logo.'" tvg-logo="'.$ch_logo.'",'.strtoupper($ch_name).PHP_EOL;
+									echo rtrim($root.$contenido[1]).PHP_EOL;	
+				};			
+};
+?>
