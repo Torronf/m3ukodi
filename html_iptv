@@ -1,7 +1,7 @@
 <?php
 //*****************************************************
 //Cortesia de:"@M3uKodi Telegram Group"
-//Fecha : 02/05/2022       
+//Fecha : 05/05/2023      
 //WebSite:https://www.m3ukodi.com
 //Mail:m3ukodi@m3ukodi.com
 //Donaciones:https://paypal.me/m3ukodi?locale.x=es_XC
@@ -21,6 +21,10 @@ header("X-Robots-Tag: noindex, nofollow", true);
 header("Content-Type: text/plain");	
 
 ob_start();
+$subDirectories = [];
+$files = [];
+$chno = 1;
+
 function cUrlGetData($url,$headers=null,$postFields=null,$head=null,$proxies=null,$cookie = null) {
 
 				$ch = curl_init($url);
@@ -71,11 +75,44 @@ function cUrlGetData($url,$headers=null,$postFields=null,$head=null,$proxies=nul
     curl_close($ch);
     return $data;
 }
-function simbo($title){
-	$search = array ('ñ', 'á', 'é', 'í', 'ó', 'ú', 'Ñ', 'Á', 'É', 'Í', 'Ó', 'Ú');
+function chr_fix($title){
+	$search =  array ('ñ', 'á', 'é', 'í', 'ó', 'ú', 'Ñ', 'Á', 'É', 'Í', 'Ó', 'Ú');
 	$replace = array ('n', 'a', 'e', 'i', 'o', 'u', 'N', 'A', 'E', 'I', 'O', 'U');
 	$title = str_replace($search, $replace, $title);
 	return $title; 
+}
+function is_subDirectory( string $dir ) {
+    if( $dir == '/' ) {
+        return true;
+    }
+    return false;
+}
+
+function get_metadata( array $data, string $url, $i= 0 ) {
+    global $chno, $files, $subDirectories; 
+
+    for ( $i; $i < count( $data[1] ); $i++ ) {
+
+        if ( is_subDirectory( $data[2][$i] ) ) {
+            $subDirectories[] = "$url/" . $data[1][$i] . $data[2][$i];
+        } else {
+            $file = array(
+                'chno'=> $chno,
+                'title'=> chr_fix(strtoupper(urldecode($data[1][$i]))),
+                'logo'=> 'https://i.imgur.com/DNh8m7a.png',
+                'type'=> 'movie',
+                'group'=> pathinfo($url,PATHINFO_BASENAME),
+                'media'=> "$url/" . $data[1][$i] . $data[2][$i],
+            ); 
+            $files[] = $file;  
+            $chno++;
+        } 
+
+    } 
+}
+function get_data($root){
+	preg_match_all("/<td><a href=\"([^\"]+)(.mp4|.avi|.mkv|.m3u|.m3u8|.3gp|\/)\">(.*?)<\/a><\/td>/", $root, $data_matc);
+	return ($data_matc);
 }
 
 if (empty($_SERVER['QUERY_STRING']) || empty($_SERVER['QUERY_STRING'])) {
@@ -83,25 +120,29 @@ if (empty($_SERVER['QUERY_STRING']) || empty($_SERVER['QUERY_STRING'])) {
    print("Parametros Invalidos o Requeridos");
    die();
 }else{
-	$root=rtrim($_SERVER['QUERY_STRING']);
-	$data_page=cUrlGetData($root);
-	preg_match_all("/<td><a href=\"([^\"]+)\">(.*?)<\/a><.*\/td>/", $data_page, $data_matc,PREG_SET_ORDER);
-	unset($data_matc[0]);
-	echo "#EXTM3U".PHP_EOL;
-		foreach($data_matc as &$contenido) {
-			$ch_name=simbo($contenido[2]);
-			$ch_logo='https://i.imgur.com/DNh8m7a.png';						
-			$ch_host=parse_url($root, PHP_URL_HOST);
-			$ch_ua='Chrome/61.0.3163.100';
 
-				echo '#EXTGRP:MOVIES'.PHP_EOL;
+	$root=rtrim(htmlspecialchars($_SERVER['QUERY_STRING']));
+	get_metadata( get_data(cUrlGetData($root)), $root ); 
+echo '#EXTM3U'.PHP_EOL;
+		while( !empty( $subDirectories ) ) {
+			foreach( $subDirectories as $subDirectory ) {
+				get_metadata(get_data(cUrlGetData($subDirectory)), rtrim($subDirectory, '/'), 1 );
+				array_shift( $subDirectories );
+			}
+			foreach ($files as $value) { 					
+				$ch_host=parse_url($root, PHP_URL_HOST);
+				$ch_ua='Chrome/61.0.3163.100';			
+				echo '#EXTGRP:'.strtoupper($ch_host).PHP_EOL;
 				echo '#EXTVLCOPT:http-referrer='.$ch_host.PHP_EOL;
 				echo '#EXTVLCOPT:network-caching=1000'.PHP_EOL;
 				echo '#EXTVLCOPT:audio-track="es-ES"'.PHP_EOL;
 				echo '#EXTVLCOPT:http-user-agent='.$ch_ua.PHP_EOL;
 				echo '#EXTVLCOPT--http-reconnect=true'.PHP_EOL;
-				echo '#EXTINF:0 type="movie" group-title="MOVIES" group-logo="'.$ch_logo.'" tvg-logo="'.$ch_logo.'",'.strtoupper($ch_name).PHP_EOL;
-				echo rtrim($root.$contenido[1]).PHP_EOL;	
-		};			
-	};
+				echo '#EXTINF:0 type="movie" chno="'.$value['chno'].'" group-title="'.
+				strtoupper($ch_host).'" group-logo="'.$value['logo'].'" tvg-logo="'.$value['logo'].'",'.
+				$value['group']."|".strtoupper($value['title']).PHP_EOL;
+				echo rtrim($value['media']).PHP_EOL;	
+			}
+		}
+};
 ?>
