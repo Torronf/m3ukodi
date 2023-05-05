@@ -121,7 +121,7 @@ if (empty($_SERVER['QUERY_STRING']) || empty($_SERVER['QUERY_STRING'])) {
    die();
 }else{
 
-	$root=rtrim(htmlspecialchars($_SERVER['QUERY_STRING']));
+	$root=rtrim(htmlspecialchars($_SERVER['QUERY_STRING'])."/");
 	get_metadata( get_data(cUrlGetData($root)), $root ); 
 echo '#EXTM3U'.PHP_EOL;
 		while( !empty( $subDirectories ) ) {
