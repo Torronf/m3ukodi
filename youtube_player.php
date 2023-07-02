@@ -21,7 +21,6 @@ ignore_user_abort(true);
 clearstatcache();
 header("X-Robots-Tag: noindex, nofollow", true);
 header("Content-Type: text/plain");	
-
 ob_start();
 function cUrlGetData($url,$headers=null,$postFields=null,$head=null,$proxies=null,$cookie = null) {
 
@@ -91,14 +90,14 @@ if (isset($_SERVER['QUERY_STRING']) && preg_match($id_ext_reg, $_SERVER['QUERY_S
 $dominio=parse_url($_SERVER['QUERY_STRING'], PHP_URL_HOST);	
 $headers = array(
    'authority:'.$dominio,
-   'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.62',
+   'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
 );		
 	preg_match($id_ext_reg,$_SERVER['QUERY_STRING'],$channel_id);
-	preg_match("'<meta itemprop=\"channelId\" content=\"(.*?)\"'si", cUrlGetData($_SERVER['QUERY_STRING'],$headers), $channel_data);
-	header("Content-type: application/x-mpegURL");
-	header("Content-Type: video/x-mpegURL");
-	header("Content-Disposition: inline; filename=\"m3ukodi.m3u\"");
-	if (empty($channel_data[1])){
+	preg_match('/channelIds\":\["([-a-zA-Z0-9_]{24,})\"\]/', cUrlGetData($_SERVER['QUERY_STRING'],$headers), $channel_data);
+//	header("Content-type: application/x-mpegURL");
+//	header("Content-Type: video/x-mpegURL");
+//	header("Content-Disposition: inline; filename=\"m3ukodi.m3u\"");
+	if (!empty($channel_data[1])){
 		$data_itag=cUrlGetData('https://www.youtube.com/watch?v='.$channel_id[1],$headers);
 		preg_match('/itag\":22,\"url\":\"([^"]+)|itag\":18,\"url\":\"([^"]+)|itag\":37,\"url\":\"([^"]+)|itag\":38,\"url\":\"([^"]+)/',$data_itag,$itag_ids);		
 		echo cUrlGetData(urldecode(unescapeUTF8EscapeSeq($itag_ids[2])),$headers);
