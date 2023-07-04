@@ -93,20 +93,22 @@ $headers = array(
    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
 );		
 	preg_match($id_ext_reg,$_SERVER['QUERY_STRING'],$channel_id);
+	
 	preg_match('/channelIds\":\["([-a-zA-Z0-9_]{24,})\"\]/', cUrlGetData($_SERVER['QUERY_STRING'],$headers), $channel_data);
-//	header("Content-type: application/x-mpegURL");
-//	header("Content-Type: video/x-mpegURL");
-//	header("Content-Disposition: inline; filename=\"m3ukodi.m3u\"");
-	if (!empty($channel_data[1])){
-		$data_itag=cUrlGetData('https://www.youtube.com/watch?v='.$channel_id[1],$headers);
-		preg_match('/itag\":22,\"url\":\"([^"]+)|itag\":18,\"url\":\"([^"]+)|itag\":37,\"url\":\"([^"]+)|itag\":38,\"url\":\"([^"]+)/',$data_itag,$itag_ids);		
-		echo cUrlGetData(urldecode(unescapeUTF8EscapeSeq($itag_ids[2])),$headers);
-	}else{
-		$data_hls=cUrlGetData('https://www.youtube.com/channel/'.$channel_data[1],$headers);
-		preg_match('/\{"url":"\/watch\?v=(.*?)\"/',$data_hls,$hls_ids);
-		$data_hls=cUrlGetData('https://www.youtube.com/watch?v='.$hls_ids[1],$headers);
-		preg_match('/hlsManifestUrl\":[\'"]([^\'"]+)/',$data_hls,$hls_url);
-		echo cUrlGetData(urldecode(unescapeUTF8EscapeSeq($hls_url[1])),$headers);
-	}; 
+	header("Content-type: application/x-mpegURL");
+	header("Content-Type: video/x-mpegURL");
+    	header("Content-Disposition: inline; filename=\"$channel_id[1]\"");
+
+	$data_itag=cUrlGetData('https://www.youtube.com/v/'.$channel_id[1].'?version=3&autoplay=1' ,$headers);
+		preg_match('/itag\":22,\"url\":\"([^"]+)|itag\":18,\"url\":\"([^"]+)|itag\":37,\"url\":\"([^"]+)|itag\":38,\"url\":\"([^"]+)/',$data_itag,$itag_ids);
+		if (!empty($itag_ids[2])){
+			header("Location:".urldecode(unescapeUTF8EscapeSeq($itag_ids[2])));
+		}else{
+			$data_hls=cUrlGetData('https://www.youtube.com/channel/'.$channel_data[1],$headers);
+			preg_match('/\{"url":"\/watch\?v=(.*?)\"/',$data_hls,$hls_ids);
+			$data_hls=cUrlGetData('https://www.youtube.com/watch?v='.$hls_ids[1],$headers);
+			preg_match('/hlsManifestUrl\":[\'"]([^\'"]+)/',$data_hls,$hls_url);
+			header("Location:".urldecode(unescapeUTF8EscapeSeq($hls_url[1])));
+		}
 }
 ?>
