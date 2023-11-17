@@ -1,0 +1,74 @@
+<?php
+//*****************************************************
+//Cortesia de:"@M3uKodi Telegram Group"
+//Fecha : 23/10/2023       
+//WebSite:https://www.m3ukodi.com
+//Mail:m3ukodi@m3ukodi.com
+//Donaciones:https://paypal.me/m3ukodi?locale.x=es_XC
+//**************************************
+error_reporting (E_ERROR | E_WARNING | E_PARSE); 
+@ini_set("display_errors",0);
+	/**
+	 * Switch mode to integrate with 3rd party CMS.
+	 * 0 = Default, no integration
+	 * 1 = Integration enabled, only missing URLs are passed to integrated CMS
+	 * 2 = Enabled and homepage is passed to integrated CMS
+	 * -1 = Return 404 error on missing urls, no integration.
+	 */
+	 	 
+ob_start();
+
+function fn_progress_bar($intCurrentCount = 100, $intTotalCount = 100)
+{
+    static $intNumberRuns = 0;
+    static $intDisplayedCurrentPercent = 0;
+
+    $dblPercentIncrease = (100 / $intTotalCount);
+    $intCurrentPercent = intval($intCurrentCount * $dblPercentIncrease);
+    $intNumberRuns++;
+
+    if ($intNumberRuns === 1) {
+        echo <<<HTML
+            <table width='50%' id='progress_bar' summary='progress_bar' align='center'>
+                <tbody>
+                    <tr>
+                        <td id='progress_bar_complete' width='0%' align='center' style='background:#CCFFCC;'>&nbsp;</td>
+                        <td style='background:#FFCCCC;'>&nbsp;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <script>
+                function dhd_fn_progress_bar_update(intCurrentPercent) {
+                    document.getElementById('progress_bar_complete').style.width = intCurrentPercent + '%';
+                    document.getElementById('progress_bar_complete').innerHTML = intCurrentPercent + '%';
+                }
+            </script>
+HTML;
+    } elseif ($intDisplayedCurrentPercent !== $intCurrentPercent) {
+        $intDisplayedCurrentPercent = $intCurrentPercent;
+        echo "<script>dhd_fn_progress_bar_update($intCurrentPercent);</script>";
+    }
+
+    if ($intCurrentPercent >= 100) {
+        $intNumberRuns = $intDisplayedCurrentPercent = 0;
+        echo "<script>document.getElementById('progress_bar').style.visibility='hidden';</script>";
+		echo "100%";
+    }
+
+    flush();
+    ob_flush();
+}
+
+
+// Llamar a la función para mostrar la barra de progreso
+fn_progress_bar(50, 100); // Esto mostrará que se ha completado el 50% del progreso
+
+// Simular un proceso largo para el ejemplo
+for ($i = 0; $i < 100; $i++) {
+    // Hacer algo que lleva tiempo aquí...
+		echo "Prueba de Barra=>".$i."<\br>";
+    // Actualizar la barra de progreso cada vez que avance el proceso
+    fn_progress_bar($i + 1, 100);
+    usleep(100000); // Simular un pequeño retraso para el ejemplo (0.1 segundos)
+}
+?>
