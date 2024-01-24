@@ -31,7 +31,7 @@ $sat_file=array(
 	"https://www.achoapps.com/listas/lista8.m3u",
 	"https://www.achoapps.com/listas/adultos1.m3u",
 	"https://www.achoapps.com/listas/deportes5.m3u",
-	"http://tecnotv.club/caducado.m3u",
+	"http://tecnotv.club/caducado.m3u"
 );
 
 
