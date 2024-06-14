@@ -1,26 +1,49 @@
 <?php
 //*****************************************************
 //Cortesia de:"@M3uKodi Telegram Group"
-//Fecha : 12/04/2023
+//Fecha : 14/06/2024
 //WebSite:https://www.m3ukodi.com
 //Mail:m3ukodi@m3ukodi.com
 //Donaciones:https://paypal.me/m3ukodi?locale.x=es_XC
 //**************************************
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
+ini_set("log_errors", 1);
+ini_set("error_log", "/errores.log");
+ini_set("display_errors", 0);
 
-ini_set("display_errors",1);
-ini_set("memory_limit","1024M");
-ini_set('upload_max_filesize', '500M');
-ini_set('post_max_size', '5000M');
-ini_set('max_input_time', 300);
-ini_set('max_execution_time', 0);
+@ini_set("memory_limit","1024M");
+@ini_set('upload_max_filesize', '500M');
+@ini_set('post_max_size', '5000M');
+@ini_set('max_input_time', 300);
+@ini_set('max_execution_time', 0);
+@ini_set('output_buffering', 'Off'); 
+@ini_set('implicit_flush', 1); 
+@ini_set('zlib.output_compression', 0); 
+@ini_set('default_socket_timeout', 20);
+
+set_time_limit(60*5);
 ignore_user_abort(true);
 clearstatcache();
+session_start(); // Se destruye cualquier 
+session_unset(); // session anterior antes de 
+session_destroy(); // comenzar con el scrip. Esto es opcional 
+
 header("X-Robots-Tag: noindex, nofollow", true);
-header("Content-Type: text/plain");	
-//Dailymotion Sistema de Stream
-//Ejemplo de uso
-//https://m3ukodi.com/iptv/dplay.php?v=https://www.dailymotion.com/video/x82z4if
+header("Content-Type: text/plain");	 
+header( "Expires: Mon, 20 Dec 1998 01:00:00 GMT" );
+header( "Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT" );
+header( "Cache-Control: no-cache, must-revalidate" );
+header( "Pragma: no-cache" );
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: origin,range,accept,accept-encoding,referer,content-type, SOAPAction,X-AxDRM-Message');
+header('Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST');
+header('Access-Control-Expose-Headers: server,range,content-range,content-length,content-type');
+require './../../developer/config/country.php';
+require './../../developer/config/arch_php.php';
+
 ob_start();
+ob_implicit_flush(1); 
+$cf = basename($_SERVER['SCRIPT_FILENAME']);
 
 function cUrlGetData($url,$headers=null,$head=null,$postFields=null,$proxies=null,$cookie = null) {
 
@@ -59,6 +82,7 @@ function cUrlGetData($url,$headers=null,$head=null,$postFields=null,$proxies=nul
 				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
 				curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($ch, CURLOPT_ENCODING,"");
 				curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
 				$data = curl_exec($ch);
@@ -72,46 +96,60 @@ function cUrlGetData($url,$headers=null,$head=null,$postFields=null,$proxies=nul
     return $data;
 }
 
-$id_ext_reg='/(?:dailymotion.com).*?([a-zA-Z0-9_-]{7})/'; 
-preg_match($id_ext_reg,$_SERVER['QUERY_STRING'],$id_video);
+$url_video = $_SERVER['QUERY_STRING'];
+$id_ext_reg = '/https?:\/\/(?:www\.)?dai(?:lymotion\.com\/video|\.ly)\/([a-zA-Z0-9]{7})/i';
 
-$headers = array(   
-   'Referer:'.$_SERVER['QUERY_STRING'],
-   'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.46',
-);
+preg_match($id_ext_reg, $url_video, $matches);
 
-$data = cUrlGetData($_SERVER['QUERY_STRING'],$headers);
+if (isset($matches[1])) {
+    $id_video = $matches[1];
 
-preg_match('/dmTs=(.*?)\"/',$data,$dmTs_match);
-preg_match('/name=\"(.*?)\"[\n].*?src/',$data,$dmV1st_match);
-@$dmV1st=explode('"',urldecode($dmV1st_match[1]));
+    $headers = array(   
+        'Referer: '.$url_video,
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.46',
+    );
 
-	    @$data_url='https://www.dailymotion.com/player/metadata/video/'.$id_video[1].'?locale=en-US&dmV1st='.$dmV1st[5].'&dmTs='.$dmTs_match[1].'&is_native_app=0';
+    $data = cUrlGetData($url_video, $headers);
+	// Usar expresión regular para extraer el valor del atributo src
+		$src_reg = '/<script[^>]*id="player_embed_script_placeholder"[^>]*src="([^"]+)"[^>]*><\/script>/i';
+		preg_match($src_reg, $data, $src_matches);
 
-		$headers = [
-				'Host: www.dailymotion.com',
-				'Connection: keep-alive',
-				'sec-ch-ua: "Chromium";v="110", "Not A(Brand";v="24", "Microsoft Edge";v="110"',
-				'sec-ch-ua-mobile: ?0',
-				'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhaWQiOiJmMWEzNjJkMjg4YzFiOTgwOTljNyIsInJvbCI6ImNhbi1tYW5hZ2UtcGFydG5lcnMtcmVwb3J0cyBjYW4tcmVhZC12aWRlby1zdHJlYW1zIGNhbi1zcG9vZi1jb3VudHJ5IGNhbi1hZG9wdC11c2VycyBjYW4tcmVhZC1jbGFpbS1ydWxlcyBjYW4tbWFuYWdlLWNsYWltLXJ1bGVzIGNhbi1tYW5hZ2UtdXNlci1hbmFseXRpY3MgY2FuLXJlYWQtbXktdmlkZW8tc3RyZWFtcyBjYW4tZG93bmxvYWQtbXktdmlkZW9zIGFjdC1hcyBhbGxzY29wZXMgYWNjb3VudC1jcmVhdG9yIGNhbi1yZWFkLWFwcGxpY2F0aW9ucyIsInNjbyI6InJlYWQgd3JpdGUgZGVsZXRlIGVtYWlsIHVzZXJpbmZvIGZlZWQgbWFuYWdlX3ZpZGVvcyBtYW5hZ2VfY29tbWVudHMgbWFuYWdlX3BsYXlsaXN0cyBtYW5hZ2VfdGlsZXMgbWFuYWdlX3N1YnNjcmlwdGlvbnMgbWFuYWdlX2ZyaWVuZHMgbWFuYWdlX2Zhdm9yaXRlcyBtYW5hZ2VfbGlrZXMgbWFuYWdlX2dyb3VwcyBtYW5hZ2VfcmVjb3JkcyBtYW5hZ2Vfc3VidGl0bGVzIG1hbmFnZV9mZWF0dXJlcyBtYW5hZ2VfaGlzdG9yeSBpZnR0dCByZWFkX2luc2lnaHRzIG1hbmFnZV9jbGFpbV9ydWxlcyBkZWxlZ2F0ZV9hY2NvdW50X21hbmFnZW1lbnQgbWFuYWdlX2FuYWx5dGljcyBtYW5hZ2VfcGxheWVyIG1hbmFnZV9wbGF5ZXJzIG1hbmFnZV91c2VyX3NldHRpbmdzIG1hbmFnZV9jb2xsZWN0aW9ucyBtYW5hZ2VfYXBwX2Nvbm5lY3Rpb25zIG1hbmFnZV9hcHBsaWNhdGlvbnMgbWFuYWdlX2RvbWFpbnMgbWFuYWdlX3BvZGNhc3RzIiwibHRvIjoiYVcxZVpSQkJXUnBKYVJORWMxaDFEMDgwQUc4TlQwbGFkaElERHciLCJhaW4iOjEsImFkZyI6MSwiaWF0IjoxNjc2NjQ3NzI3LCJleHAiOjE2NzY2ODMxODcsImRtdiI6IjEiLCJhdHAiOiJicm93c2VyIiwiYWRhIjoid3d3LmRhaWx5bW90aW9uLmNvbSIsInZpZCI6IkJDQTZFRDkzQTRGODRGNDEzNjg1NDEwNDUwQzhCM0FEIiwiZnRzIjo0Njk0NjAsImNhZCI6MiwiY3hwIjoyLCJjYXUiOjIsImtpZCI6IkFGODQ5REQ3M0E1ODYzQ0Q3RDk3RDBCQUIwNzIyNDNCIn0.T-yLhrEc1C5CGw94hi5-tFqcVvmh7bnWGJIKajxbfxU',
-				'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.46',
-				'sec-ch-ua-platform: "Windows"',
-				'Accept: */*',
-				'Sec-Fetch-Site: same-origin',
-				'Sec-Fetch-Mode: cors',
-				'Sec-Fetch-Dest: empty',
-				'Referer: https://www.dailymotion.com/embed?api=postMessage&apimode=json&app=com.dailymotion.neon&autoplay-mute=true&client_type=website&collections-action=trigger_event&collections-enable=fullscreen_only&endscreen-enable=false&info=false&like-action=trigger_event&like-enable=fullscreen_only&queue-enable=false&sharing-action=trigger_event&sharing-enable=fullscreen_only&ui-logo=false&watchlater-action=trigger_event&watchlater-enable=fullscreen_only&source=https%3A%2F%2Fwww.google.com%2F&dmTs='.$dmTs_match[1],
-				'Accept-Language: en-US,en;q=0.9,es;q=0.8',
-				'Cookie: v1st='.@$dmV1st[5].'; ts='.@$dmTs_match[1].'; usprivacy=1---; dmaid=fdea1dc0-2572-4dd4-bb7b-85fb74c1d7a7; dmvk=63ef9d2dd9a7d; client_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhaWQiOiJmMWEzNjJkMjg4YzFiOTgwOTljNyIsInJvbCI6ImNhbi1tYW5hZ2UtcGFydG5lcnMtcmVwb3J0cyBjYW4tcmVhZC12aWRlby1zdHJlYW1zIGNhbi1zcG9vZi1jb3VudHJ5IGNhbi1hZG9wdC11c2VycyBjYW4tcmVhZC1jbGFpbS1ydWxlcyBjYW4tbWFuYWdlLWNsYWltLXJ1bGVzIGNhbi1tYW5hZ2UtdXNlci1hbmFseXRpY3MgY2FuLXJlYWQtbXktdmlkZW8tc3RyZWFtcyBjYW4tZG93bmxvYWQtbXktdmlkZW9zIGFjdC1hcyBhbGxzY29wZXMgYWNjb3VudC1jcmVhdG9yIGNhbi1yZWFkLWFwcGxpY2F0aW9ucyIsInNjbyI6InJlYWQgd3JpdGUgZGVsZXRlIGVtYWlsIHVzZXJpbmZvIGZlZWQgbWFuYWdlX3ZpZGVvcyBtYW5hZ2VfY29tbWVudHMgbWFuYWdlX3BsYXlsaXN0cyBtYW5hZ2VfdGlsZXMgbWFuYWdlX3N1YnNjcmlwdGlvbnMgbWFuYWdlX2ZyaWVuZHMgbWFuYWdlX2Zhdm9yaXRlcyBtYW5hZ2VfbGlrZXMgbWFuYWdlX2dyb3VwcyBtYW5hZ2VfcmVjb3JkcyBtYW5hZ2Vfc3VidGl0bGVzIG1hbmFnZV9mZWF0dXJlcyBtYW5hZ2VfaGlzdG9yeSBpZnR0dCByZWFkX2luc2lnaHRzIG1hbmFnZV9jbGFpbV9ydWxlcyBkZWxlZ2F0ZV9hY2NvdW50X21hbmFnZW1lbnQgbWFuYWdlX2FuYWx5dGljcyBtYW5hZ2VfcGxheWVyIG1hbmFnZV9wbGF5ZXJzIG1hbmFnZV91c2VyX3NldHRpbmdzIG1hbmFnZV9jb2xsZWN0aW9ucyBtYW5hZ2VfYXBwX2Nvbm5lY3Rpb25zIG1hbmFnZV9hcHBsaWNhdGlvbnMgbWFuYWdlX2RvbWFpbnMgbWFuYWdlX3BvZGNhc3RzIiwibHRvIjoiYVcxZVpSQkJXUnBKYVJORWMxaDFEMDgwQUc4TlQwbGFkaElERHciLCJhaW4iOjEsImFkZyI6MSwiaWF0IjoxNjc2NjQ3NzI3LCJleHAiOjE2NzY2ODMxODcsImRtdiI6IjEiLCJhdHAiOiJicm93c2VyIiwiYWRhIjoid3d3LmRhaWx5bW90aW9uLmNvbSIsInZpZCI6IkJDQTZFRDkzQTRGODRGNDEzNjg1NDEwNDUwQzhCM0FEIiwiZnRzIjo0Njk0NjAsImNhZCI6MiwiY3hwIjoyLCJjYXUiOjIsImtpZCI6IkFGODQ5REQ3M0E1ODYzQ0Q3RDk3RDBCQUIwNzIyNDNCIn0.T-yLhrEc1C5CGw94hi5-tFqcVvmh7bnWGJIKajxbfxU; lang=en_US; _ga=GA1.2.1527937344.1676647728; _gid=GA1.2.318440514.1676647728; vc=0/false; cookie_policy_closed=1; __gads=ID=fd124533583b963a:T=1676647881:S=ALNI_MaXH3QfjsXxclRxS1xg_5qoOarlag; __gpi=UID=000009b1b4f552b2:T=1676647881:RT=1676647881:S=ALNI_MbnRq6pVnPz61RopyrToR-bos7KhQ; 1stsearch=1; cto_bundle=aWEfv19TRmZmMnBtemxwJTJCdHlwcGdFJTJCd2NSN2RvMGpwM0dSZ2xva1ZJSFNGZjUzNTdVclduc3d6cElmQXljNFR2a2MxU0hqY1JpZ2paZzZ0eXkzdndaWEo3QURCTWtteCUyRndBcDFrZG91MmZTSFJFYjg3JTJGM09TR1h4dnZkMDVsbCUyQlZPZm96SDh6VmxzJTJCQ2dBWlRrWlNNbmhDOTJOSUlDcEYzZkk3MDFrVE9xJTJGUWw2VSUzRA; ff=on; damd=R7sM8r3Kyf4bLOKbZE0eupnnlpGbt7Yk6fJB9fatAFKOZ47WUGczyE4LC_NVtmPCZoky30mkNLdS7mM7CqXvinqY7g847D5wvddjyNN9jnK5baKQGm8hTYMHIe1K7ax2EfeuJsAgNRX9oitcWTHzZYiuAj_vDodqWfTf3a3pyBA_fmu9fKqgY_QINYycUx3Bpbj8X-MPIrAeNJEkAVIoYVAd05JLEeQK7afEzANzR0zX-kVmLlhp6-CYwefrG0rTtbj8etBiJ6BCk_JpD0V2Ivm3N13QhjAwI7fCzANaqFU9fVH_5_3UlWpuPWca1vO3Waul00v19mz6Z6L2HJUE3A',
-];
-		  
-			$sele_dat=json_decode(cUrlGetData($data_url,$headers),true);
+		if (isset($src_matches[1])) {
+		$headers = array(   
+			'Host: geo.dailymotion.com',
+			'Referer: '.$url_video,
+			'Cookie: v1st=bd9279e2-eee3-409f-9485-1baa191ea1a3; usprivacy=1---; '
+			);
 			
-			if(!empty($sele_dat['error']['message'])){header('Location: ' . filter_var("https://tinyurl.com/m3ukodivideolost", FILTER_SANITIZE_URL));exit($sele_dat['error']['message']);};
-			
-			$TS = explode("\n",cUrlGetData($sele_dat['qualities']['auto'][0]['url'],$headers));
- 
-				$url_domain=substr(strtok($TS[12],"#"),0);
-				$url_ts=cUrlGetData($TS[12],$headers);
-			header('Location: ' . filter_var($url_domain, FILTER_SANITIZE_URL));
+				$src_url = $src_matches[1];
+				$src_data = cUrlGetData($src_url, $headers);
+				preg_match('/"v1st":"([^"]+)"/', $src_data, $v1st_match);
+				
+				$data_url='https://www.dailymotion.com/player/metadata/video/'.$matches[1].'?dmV1st='.$v1st_match[1];
+				$headers =[
+					'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+					'Accept-Encoding: gzip, deflate, br, zstd',
+					'sec-ch-ua: "Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+					'sec-ch-ua-mobile: ?0',
+					'sec-ch-ua-platform: "Windows"',
+					'Origin: https://geo.dailymotion.com',
+					'Sec-Fetch-Site: same-site',
+					'Sec-Fetch-Mode: cors',
+					'Sec-Fetch-Dest: empty',
+					'Referer: https://geo.dailymotion.com/',
+					'Accept-Language: es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,es-MX;q=0.5',
+				  ];
+
+				$response=cUrlGetData($data_url,$headers);
+				$url_video_json=json_decode($response,true)['qualities']['auto'][0]['url'];
+
+				$url_video=cUrlGetData($url_video_json,$headers);
+				print_r($url_video);
+		} else {
+			echo "No se encontró el valor de src en el contenido obtenido.";
+		}
+} else {
+    // Maneja el caso en que no se encuentre un ID de video
+    echo "No se encontró un ID de video válido en la URL proporcionada.";
+}
 ?>
