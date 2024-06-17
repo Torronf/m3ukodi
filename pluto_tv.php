@@ -135,14 +135,14 @@ function cUrlGetData($url, $headers = [], $head = null, $checkUrl = null, $proxi
         curl_setopt($ch, CURLOPT_COOKIEJAR, __DIR__ . "/cookie.txt");
     }
 
-    $response = curl_exec($ch);
+    $ch_guide = curl_exec($ch);
     $error = curl_error($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
     if ($error) {
         echo $error;
     } elseif ($httpCode === 200) {
-        return $response;
+        return $ch_guide;
     }
 
     // Extraer el tamaño del Archivo
@@ -152,7 +152,7 @@ function cUrlGetData($url, $headers = [], $head = null, $checkUrl = null, $proxi
 
     // Extraer cookies del encabezado de respuesta solo si $cookie no es NULL
     if ($cookie && !empty($cookie)) {
-        preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $response, $matches);
+        preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $ch_guide, $matches);
         $cookies = [];
         foreach ($matches[1] as $match) {
             parse_str($match, $cookieData);
@@ -168,73 +168,216 @@ function cUrlGetData($url, $headers = [], $head = null, $checkUrl = null, $proxi
 
     curl_close($ch);
 
-    if ($response) return $response; else return FALSE;
+    if ($ch_guide) return $ch_guide; else return FALSE;
 }
-define('BEARER', "eyJhbGciOiJIUzI1NiIsImtpZCI6Ijg3YTY3ZTA3LWU0Y2EtNGMxYS04ZTdhLTQ4NWJhNmNiNTg0MiIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uSUQiOiJiNDY3OTM4MC0yYTUzLTExZWYtOTQ3YS1hNmFjMDRiNmM4NDkiLCJjbGllbnRJUCI6IjE3OS41Mi4yOS45NCIsImNpdHkiOiJCYWpvcyBEZSBIYWluYSIsInBvc3RhbENvZGUiOiI5MTAwMCIsImNvdW50cnkiOiJETyIsImRtYSI6MCwiYWN0aXZlUmVnaW9uIjoiVkUiLCJkZXZpY2VMYXQiOjE4LjQyMDAwMDA3NjI5Mzk0NSwiZGV2aWNlTG9uIjotNzAuMDI5OTk4Nzc5Mjk2ODgsInByZWZlcnJlZExhbmd1YWdlIjoiZXMiLCJkZXZpY2VUeXBlIjoiYW5kcm9pZCxBc3VzLG1vYmlsZSIsImRldmljZVZlcnNpb24iOiI5XzI4IiwiZGV2aWNlTWFrZSI6IkFzdXMiLCJkZXZpY2VNb2RlbCI6IkFTVVNfSTAwNURBIiwiYXBwTmFtZSI6ImFuZHJvaWRtb2JpbGUiLCJhcHBWZXJzaW9uIjoiNS4xMC4wIiwiY2xpZW50SUQiOiI5YjViODA2Zi0zODIwLTQ1ZDUtYjA3ZS1mMzM5ZTNjMWNhOWVfN2RkNjAyYzBiMDBhMmFiOSIsImNtQXVkaWVuY2VJRCI6IiIsImlzQ2xpZW50RE5UIjpmYWxzZSwidXNlcklEIjoiIiwibG9nTGV2ZWwiOiJERUZBVUxUIiwidGltZVpvbmUiOiJBbWVyaWNhL1NhbnRvX0RvbWluZ28iLCJzZXJ2ZXJTaWRlQWRzIjpmYWxzZSwiZTJlQmVhY29ucyI6ZmFsc2UsImZlYXR1cmVzIjp7Im11bHRpUG9kQWRzIjp7ImVuYWJsZWQiOnRydWV9fSwiZm1zUGFyYW1zIjp7ImZ3VmNJRDIiOiI5YjViODA2Zi0zODIwLTQ1ZDUtYjA3ZS1mMzM5ZTNjMWNhOWVfN2RkNjAyYzBiMDBhMmFiOSIsImZ3VmNJRDJDb3BwYSI6IjliNWI4MDZmLTM4MjAtNDVkNS1iMDdlLWYzMzllM2MxY2E5ZV83ZGQ2MDJjMGIwMGEyYWI5IiwiY3VzdG9tUGFyYW1zIjp7ImZtc19saXZlcmFtcF9pZGwiOiIiLCJmbXNfZW1haWxoYXNoIjoiIiwiZm1zX3N1YnNjcmliZXJpZCI6IiIsImZtc19pZmEiOiIiLCJmbXNfaWRmdiI6IiIsImZtc191c2VyaWQiOiI5YjViODA2Zi0zODIwLTQ1ZDUtYjA3ZS1mMzM5ZTNjMWNhOWVfN2RkNjAyYzBiMDBhMmFiOSIsImZtc192Y2lkMnR5cGUiOiJ1c2VyaWQiLCJmbXNfcmFtcF9pZCI6IiIsImZtc19oaF9yYW1wX2lkIjoiIiwiZm1zX2JpZGlkdHlwZSI6IiIsIl9md18zUF9VSUQiOiIiLCJmbXNfcnVsZWlkIjoiMTAwMDAsMTAwMDksMTAwMDMifX0sImlzcyI6ImJvb3QucGx1dG8udHYiLCJzdWIiOiJwcmk6djE6cGx1dG86ZGV2aWNlczpWRTpPV0kxWWpnd05tWXRNemd5TUMwME5XUTFMV0l3TjJVdFpqTXpPV1V6WXpGallUbGxYemRrWkRZd01tTXdZakF3WVRKaFlqaz0iLCJhdWQiOiIqLnBsdXRvLnR2IiwiZXhwIjoxNzE4NDU4ODQ2LCJpYXQiOjE3MTgzNzI0NDYsImp0aSI6IjM2Njc2OGQ3LTU3ZTMtNDAzOC04NGFkLTRmNDdjN2YwMTI2ZCJ9.8lnYQBapFPaIkQH1ePuCIbiLPQXPAQEcpW08bx0wWQo");
+$pluto_boot='https://boot.pluto.tv/v4/start?appName=androidmobile&appVersion=5.10.0&clientID=9b5b806f-3820-45d5-b07e-f339e3c1ca9e_7dd602c0b00a2ab9&clientModelNumber=ASUS_I005DA&deviceVersion=9_28&clientDeviceType=4&deviceModel=ASUS_I005DA&deviceType=android%2CAsus%2Cmobile&deviceMake=Asus&isClientDNT=false&channelCount=0&serverSideAds=false';
 
-$headers = ['Authorization:Bearer '.BEARER]; //Importante Para el Acceso
+$pluto_path = json_decode(cUrlGetData($pluto_boot),true);
 
-$pluto_path=json_decode(file_get_contents('https://boot.pluto.tv/v4/start?clientModelNumber=ASUS_I005DA&&clientID=9b5b806f-3820-45d5-b07e-f339e3c1ca9e_7dd602c0b00a2ab9&appName=androidmobile&appVersion=5.10.0'),true)['servers'];
-$stitcher=$pluto_path['stitcher'].'/v2';//https://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv
-$stitcherDash=$pluto_path['stitcherDash']; //https://cfd-v4-service-stitcher-dash-use1-1.prd.pluto.tv
-$channels_path=$pluto_path['channels']; //https://service-channels.clusters.pluto.tv
+// Verificar si los datos fueron obtenidos correctamente
+if (!$pluto_path) {
+    die("Error: No se pudieron obtener los datos de Pluto TV.");
+}
+
+$api=$pluto_path['servers']['api'];// $=> https://api.pluto.tv
+$vod=$pluto_path['servers']['vod'];// $=> https://service-vod.clusters.pluto.tv
+$stitcher=$pluto_path['servers']['stitcher'];// $=> https://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv
+$analytics=$pluto_path['servers']['analytics'];// $=> https://sp.pluto.tv
+$watchlist=$pluto_path['servers']['watchlist'];// $=> https://service-watchlist-ga.prd.pluto.tv
+$search=$pluto_path['servers']['search'];// $=> https://service-media-search.clusters.pluto.tv
+$concierge=$pluto_path['servers']['concierge'];// $=> https://service-concierge.clusters.pluto.tv
+$preferences=$pluto_path['servers']['preferences'];// $=> 
+$campaigns=$pluto_path['servers']['campaigns'];// $=> https://service-campaigns-ga.prd.pluto.tv
+$users=$pluto_path['servers']['users'];// $=> https://service-users.clusters.pluto.tv
+$recommender=$pluto_path['servers']['recommender'];// $=> https://service-recommender.clusters.pluto.tv
+$catalog=$pluto_path['servers']['catalog'];// $=> https://service-media-catalog.clusters.pluto.tv
+$stitcherDash=$pluto_path['servers']['stitcherDash'];// $=> https://cfd-v4-service-stitcher-dash-use1-1.prd.pluto.tv
+$pause=$pluto_path['servers']['pause'];// $=> https://service-ad-image-ga.prd.pluto.tv
+$carousel=$pluto_path['servers']['carousel'];// $=> https://service-carousel-builder-ga.prd.pluto.tv
+$features=$pluto_path['servers']['features'];// $=> https://service-features-ga.prd.pluto.tv
+$hub=$pluto_path['servers']['hub'];// $=> https://service-hub-builder-ga.prd.pluto.tv
+$stitcherParams=$pluto_path['stitcherParams'];//advertisingId=&appName=....
 $server = "http://{$_SERVER['HTTP_HOST']}{$_SERVER['PHP_SELF']}";
+$version='v2';
+$channels=$pluto_path['servers']['channels'];// $=> https://service-channels.clusters.pluto.tv
+$url_channel = $channels . "/" . $version . "/guide/channels?channelIds=&offset=0&limit=1000&sort=number%3Aasc";
 
-$url = $channels_path."/v2/guide/channels?offset=&limit=0&sort=&channelIds="; //https://service-channels.clusters.pluto.tv/v2/guide/channels?offset=&limit=0&sort=&channelIds=
-                                                                                     
-$response = cUrlGetData($url, $headers);
+$all_sessionToken = [
+    'USA' => $pluto_path['sessionToken'],
+    'LATAM'=>'eyJhbGciOiJIUzI1NiIsImtpZCI6ImM1MTI1YmM0LWUxZjYtNDNkYi04MjE0LTRlM2I2MzQ0N2NhZSIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uSUQiOiJjNDZiMTkzMS0yY2JjLTExZWYtYTlhNi1lZTYyZGVlYzU2NTkiLCJjbGllbnRJUCI6IjE3OS41Mi45LjI1MSIsImNpdHkiOiJTYWJhbmEgRGUgTGEgTWFyIiwicG9zdGFsQ29kZSI6IjI1MTAwIiwiY291bnRyeSI6IkRPIiwiZG1hIjowLCJhY3RpdmVSZWdpb24iOiJWRSIsImRldmljZUxhdCI6MTkuMDQ5OTk5MjM3MDYwNTQ3LCJkZXZpY2VMb24iOi02OS4zODk5OTkzODk2NDg0NCwicHJlZmVycmVkTGFuZ3VhZ2UiOiJlcyIsImRldmljZVR5cGUiOiJhbmRyb2lkLEFzdXMsbW9iaWxlIiwiZGV2aWNlVmVyc2lvbiI6IjlfMjgiLCJkZXZpY2VNYWtlIjoiQXN1cyIsImRldmljZU1vZGVsIjoiQVNVU19JMDA1REEiLCJhcHBOYW1lIjoiYW5kcm9pZG1vYmlsZSIsImFwcFZlcnNpb24iOiI1LjEwLjAiLCJjbGllbnRJRCI6IjliNWI4MDZmLTM4MjAtNDVkNS1iMDdlLWYzMzllM2MxY2E5ZV83ZGQ2MDJjMGIwMGEyYWI5IiwiY21BdWRpZW5jZUlEIjoiIiwiaXNDbGllbnRETlQiOmZhbHNlLCJ1c2VySUQiOiIiLCJsb2dMZXZlbCI6IkRFRkFVTFQiLCJ0aW1lWm9uZSI6IkFtZXJpY2EvU2FudG9fRG9taW5nbyIsInNlcnZlclNpZGVBZHMiOmZhbHNlLCJlMmVCZWFjb25zIjpmYWxzZSwiZmVhdHVyZXMiOnsibXVsdGlQb2RBZHMiOnsiZW5hYmxlZCI6dHJ1ZX19LCJmbXNQYXJhbXMiOnsiZndWY0lEMiI6IjliNWI4MDZmLTM4MjAtNDVkNS1iMDdlLWYzMzllM2MxY2E5ZV83ZGQ2MDJjMGIwMGEyYWI5IiwiZndWY0lEMkNvcHBhIjoiOWI1YjgwNmYtMzgyMC00NWQ1LWIwN2UtZjMzOWUzYzFjYTllXzdkZDYwMmMwYjAwYTJhYjkiLCJjdXN0b21QYXJhbXMiOnsiZm1zX2xpdmVyYW1wX2lkbCI6IiIsImZtc19lbWFpbGhhc2giOiIiLCJmbXNfc3Vic2NyaWJlcmlkIjoiIiwiZm1zX2lmYSI6IiIsImZtc19pZGZ2IjoiIiwiZm1zX3VzZXJpZCI6IjliNWI4MDZmLTM4MjAtNDVkNS1iMDdlLWYzMzllM2MxY2E5ZV83ZGQ2MDJjMGIwMGEyYWI5IiwiZm1zX3ZjaWQydHlwZSI6InVzZXJpZCIsImZtc19yYW1wX2lkIjoiIiwiZm1zX2hoX3JhbXBfaWQiOiIiLCJmbXNfYmlkaWR0eXBlIjoiIiwiX2Z3XzNQX1VJRCI6IiIsImZtc19ydWxlaWQiOiIxMDAwMCwxMDAwOSwxMDAwMyJ9fSwiaXNzIjoiYm9vdC5wbHV0by50diIsInN1YiI6InByaTp2MTpwbHV0bzpkZXZpY2VzOlZFOk9XSTFZamd3Tm1ZdE16Z3lNQzAwTldRMUxXSXdOMlV0WmpNek9XVXpZekZqWVRsbFh6ZGtaRFl3TW1Nd1lqQXdZVEpoWWprPSIsImF1ZCI6IioucGx1dG8udHYiLCJleHAiOjE3MTg3MjM4NzMsImlhdCI6MTcxODYzNzQ3MywianRpIjoiYjMwMTA2MGEtOWYzYS00NWY4LTg1NmUtYzdiOWU3ZjUzNTQ2In0.hu4nKAMNj1LE22k0BUoY34LvoQDY-aPzkNcYhJk7fdY',
+    'SPAIN'=>'eyJhbGciOiJIUzI1NiIsImtpZCI6ImM1MTI1YmM0LWUxZjYtNDNkYi04MjE0LTRlM2I2MzQ0N2NhZSIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uSUQiOiJlYTliMTM1OC0yYzlmLTExZWYtYTY0Ny1hZTlkODU5ZDlmODgiLCJjbGllbnRJUCI6Ijc3LjI3LjI1NC4xMTYiLCJjaXR5IjoiTHVnbyIsInBvc3RhbENvZGUiOiIyNzAwMSIsImNvdW50cnkiOiJFUyIsImRtYSI6MCwiYWN0aXZlUmVnaW9uIjoiRVMiLCJkZXZpY2VMYXQiOjQzLjAwOTk5ODMyMTUzMzIsImRldmljZUxvbiI6LTcuNTU5OTk5OTQyNzc5NTQxLCJwcmVmZXJyZWRMYW5ndWFnZSI6ImVuIiwiZGV2aWNlVHlwZSI6IndlYiIsImRldmljZVZlcnNpb24iOiIxMjUuMC4wIiwiZGV2aWNlTWFrZSI6ImNocm9tZSIsImRldmljZU1vZGVsIjoid2ViIiwiYXBwTmFtZSI6IndlYiIsImFwcFZlcnNpb24iOiI5LjIuMS1hMmQwOTYwZTk4YTdhMDYyOWQzZDViZDRhOTIwYWM4ZTA5MTNjOTZmIiwiY2xpZW50SUQiOiJiNTRjMTY2NS1jYmJiLTQ5ZjctYjEzZS1kN2JjNzgwNjQ3ZjkiLCJjbUF1ZGllbmNlSUQiOiIiLCJpc0NsaWVudEROVCI6ZmFsc2UsInVzZXJJRCI6IiIsImxvZ0xldmVsIjoiREVGQVVMVCIsInRpbWVab25lIjoiRXVyb3BlL01hZHJpZCIsInNlcnZlclNpZGVBZHMiOmZhbHNlLCJlMmVCZWFjb25zIjpmYWxzZSwiZmVhdHVyZXMiOnsibXVsdGlQb2RBZHMiOnsiZW5hYmxlZCI6dHJ1ZX19LCJmbXNQYXJhbXMiOnsiZndWY0lEMiI6ImI1NGMxNjY1LWNiYmItNDlmNy1iMTNlLWQ3YmM3ODA2NDdmOSIsImZ3VmNJRDJDb3BwYSI6ImI1NGMxNjY1LWNiYmItNDlmNy1iMTNlLWQ3YmM3ODA2NDdmOSIsImN1c3RvbVBhcmFtcyI6eyJmbXNfbGl2ZXJhbXBfaWRsIjoiIiwiZm1zX2VtYWlsaGFzaCI6IiIsImZtc19zdWJzY3JpYmVyaWQiOiIiLCJmbXNfaWZhIjoiIiwiZm1zX2lkZnYiOiIiLCJmbXNfdXNlcmlkIjoiYjU0YzE2NjUtY2JiYi00OWY3LWIxM2UtZDdiYzc4MDY0N2Y5IiwiZm1zX3ZjaWQydHlwZSI6InVzZXJpZCIsImZtc19yYW1wX2lkIjoiIiwiZm1zX2hoX3JhbXBfaWQiOiIiLCJmbXNfYmlkaWR0eXBlIjoiIiwiX2Z3XzNQX1VJRCI6IiIsImZtc19ydWxlaWQiOiIxMDAwMCwxMDAwOSwxMDAwMyJ9fSwiZHJtIjp7Im5hbWUiOiJ3aWRldmluZSIsImxldmVsIjoiTDMifSwiaXNzIjoiYm9vdC5wbHV0by50diIsInN1YiI6InByaTp2MTpwbHV0bzpkZXZpY2VzOkVTOllqVTBZekUyTmpVdFkySmlZaTAwT1dZM0xXSXhNMlV0WkRkaVl6YzRNRFkwTjJZNSIsImF1ZCI6IioucGx1dG8udHYiLCJleHAiOjE3MTg3MTE0ODEsImlhdCI6MTcxODYyNTA4MSwianRpIjoiNDFhODNhOTAtOGJjYy00YzkzLWI2YTgtZmQ3NzQ3ZGIwYzg1In0.bal43CKvHMSFjXHXZGKvf0jZxigTr51ZgpQr9NqbSrI'
+];
+// Obtener la región desde la URL
+$region = isset($_GET['region']) ? strtoupper($_GET['region']) : 'ALL';
+    // Mostrar información sobre los parámetros si no se especifica una región
+    if (empty($region)) {
+        echo "Por favor, especifique una región utilizando el parámetro 'region' en la URL. Ejemplos de uso:\n";
+        echo " - ".$_SERVER['PHP_SELF']."?region=Latam\n";
+        echo " - ".$_SERVER['PHP_SELF']."?region=USA\n";
+        echo " - ".$_SERVER['PHP_SELF']."?region=Spain\n";
+        echo " - ".$_SERVER['PHP_SELF']."?region=all\n";
+        exit;
+    }
+// Realizar las solicitudes
+$ch_guide_all = [];
 
-if (isset($_GET['play_live']) && !empty($_GET['play_live'])) {
-    $url_path = preg_replace('/master\.m3u8$/', '', $_GET['play_live']);
-    
-    // Obtener datos de la URL proporcionada
-    $playlist_data = cUrlGetData($_GET['play_live'],$headers);
-    
-    if ($playlist_data !== false && !empty($playlist_data)) {
+    // Realizar solicitudes basadas en la región
+    if ($region == 'ALL') {
+        foreach ($all_sessionToken as $regionKey => $sessionToken) {
+            $headers = [
+                'Accept: application/json',
+                'authorization: Bearer ' . $sessionToken,
+                'origin: https://pluto.tv',
+                'referer: https://pluto.tv/',
+                'user-agent: Xskdnjoksdna34nm',
+            ];
+            
+            $response = cUrlGetData($url_channel, $headers);
+            $ch_guide_all[$regionKey] = json_decode($response, true);
+        }
+    } else {
+        if (array_key_exists($region, $all_sessionToken)) {
+            $headers = [
+                'Accept: application/json',
+                'authorization: Bearer ' . $all_sessionToken[$region],
+                'origin: https://pluto.tv',
+                'referer: https://pluto.tv/',
+                'user-agent: Xskdnjoksdna34nm',
+            ];
+        
+            $response = cUrlGetData($url_channel, $headers);
+            $ch_guide_all[$region] = json_decode($response, true);
+        } else {
+            echo "Región no válida.";
+            exit;
+        }
+    }
+
+// Unir los arrays resultantes
+$ch_guide = [];
+    foreach ($ch_guide_all as $regionKey => $regionData) {
+        if (isset($regionData['data'])) {
+            // Agregar cada canal al array $ch_guide, manteniendo la clave de región
+            foreach ($regionData['data'] as $channel) {
+                // Agregar la clave de región al canal para mantener la asociación
+                $channel['region'] = $regionKey;
+                $ch_guide[] = $channel;
+            }
+        }
+    }
+
+    if (isset($_GET['play_live']) && !empty($_GET['play_live'])) {
+        
+        $headers_host=['Host: cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv'];
+        $headers = array_merge($headers, $headers_host);
+
+        // Obtener y descifrar el enlace
+        $url_link = $_GET['play_live'] . "?" . $stitcherParams;
+        $host = parse_url($url_link, PHP_URL_SCHEME) . '://' . parse_url($url_link, PHP_URL_HOST);
+        $url_path = preg_replace('/master\.m3u8.*$/', '', $url_link);
+        
         // Expresión regular para encontrar las líneas con el patrón específico
         $regex = '/(\d+\/playlist\.m3u8.*)/';
-
-        // Usar preg_match_all para encontrar todas las coincidencias
-        preg_match_all($regex, $playlist_data, $matches);
         
-        if (!empty($matches[0])) {
-            // Añadir $url_path a cada coincidencia
-            $updated_matches = array_map(function($match) use ($url_path) {
-                return $url_path . $match;
-            }, $matches[0]);
+        // Obtener datos de la URL proporcionada
+        $playlist_data = cUrlGetData($url_link, $headers);
 
-            // Verificar cada URL y redirigir si es válida
-            foreach ($updated_matches as $url) {
-                if (cUrlGetData($url, $headers,$checkUrl=$url)) {
-                    echo cUrlGetData($url, $headers);
-                    exit; // Detener la ejecución después de la redirección
+        
+        if ($playlist_data !== false && !empty($playlist_data)) {
+            // Manejo de redirecciones
+            if (preg_match('/Found. Redirecting to (.+)/', $playlist_data, $matches)) {
+                $context = stream_context_create([
+                    'http' => [
+                        'method' => 'GET',
+                        'header' => implode("\r\n", $headers),
+                    ]
+                ]);
+                
+                // Hacer la solicitud y obtener los headers de la respuesta
+                $headers_response = get_headers($url_link, 1, $context);
+                $url_location = $host . $headers_response['location'][0];
+
+                $hls_get_data = $host . $headers_response['location'];
+                $hls_data = cUrlGetData($hls_get_data, $headers);
+
+                // Usar preg_match_all para encontrar todas las coincidencias
+                preg_match_all($regex, $hls_data, $matches);
+
+                if (!empty($matches[0])) {
+                    // Añadir $url_path a cada coincidencia
+                    $updated_matches = array_map(function($match) use ($host) {
+                        return $host . $match;
+                    }, $matches[0]);
+
+                    // Verificar cada URL y redirigir si es válida
+                    foreach ($updated_matches as $url) {
+                        if (cUrlGetData($url, $headers, $url)) {
+                            echo cUrlGetData($url, $headers);
+                            exit; // Detener la ejecución después de la redirección
+                        }
+                    }
+                } else {
+                    echo "No se pudieron obtener los datos de la lista de reproducción.";
+                    exit;
+                }
+            } else {
+                // Usar preg_match_all para encontrar todas las coincidencias
+                preg_match_all($regex, $playlist_data, $matches);
+
+                if (!empty($matches[0])) {
+                    // Añadir $url_path a cada coincidencia
+                    $updated_matches = array_map(function($match) use ($url_path) {
+                        return $url_path . $match;
+                    }, $matches[0]);
+
+                    // Verificar cada URL y redirigir si es válida
+                    foreach ($updated_matches as $url) {
+                        if (cUrlGetData($url, $headers, $url)) {
+                            echo cUrlGetData($url, $headers);
+                            exit; // Detener la ejecución después de la redirección
+                        }
+                    }
+                } else {
+                    echo "No se pudieron obtener los datos de la lista de reproducción.";
+                    exit;
                 }
             }
         } else {
-            echo "No se pudieron obtener los datos de la lista de reproducción.";
+            echo "No se pudieron obtener datos del enlace proporcionado.";
+            exit;
         }
-        exit;
-    }
-}
-echo '#EXTM3U'.PHP_EOL;
-    if ($response !== FALSE) {
-        $jsonData = json_decode($response, true)['data'];
-            if ($jsonData !== null) {
+    } 
 
-                    foreach($jsonData as $channel)
-                        {
-                            $id= $channel['id'];//5dcb62e63d4d8f0009f36881
-                            $name=$channel['name'];//Pluto TV Cine Acción
-                            $number=$channel['number'];//21
-                            $stitched_m3u8=$channel['stitched']['path'];//stitch/hls/channel/5dcb62e63d4d8f0009f36881/master.m3u8
-                            $images=$channel['images'][0]['url'];//https://images.pluto.tv/channels/5dcb62e63d4d8f0009f36881/colorLogoPNG.png
-                            
-                            echo '#EXTINF:-1 "tvg-name="'.$title.'" tvg-logo="'.$images.'",'.$name.PHP_EOL;
-                            echo $server."?play_live=".$stitcher.$stitched_m3u8.PHP_EOL;
-                        }
-               
-            } else {
-                echo "Error al decodificar JSON.";
+echo '#EXTM3U'.PHP_EOL;
+
+    if ($ch_guide !== FALSE) {
+        foreach($ch_guide as $channel) {
+
+                $id= $channel['id'];//5dcb62e63d4d8f0009f36881
+                $name=$channel['name'];//Pluto TV Cine Acción
+                $number=$channel['number'];//21
+                $region=$channel['region'];
+                if (isset($channel['stitched']['paths'])) {
+                    $stitched_m3u8 = $channel['stitched']['paths'][0]['path'];
+                } else {
+                    $stitched_m3u8 = $channel['stitched']['path'];
+                };
+                $images=$channel['images'][0]['url'];//https://images.pluto.tv/channels/5dcb62e63d4d8f0009f36881/colorLogoPNG.png
+                
+                $ua='Dalvik/2.1.0 (Linux; U; Android 9; ASUS_I005DA Build/PI)';
+                $group_logo = "https://tinyurl.com/logom3ukodi";
+                $dirname = pathinfo($stitcher, PATHINFO_DIRNAME);
+                echo '#KODIPROP:inputstreamaddon=inputstream.adaptive'.PHP_EOL;
+                echo '#KODIPROP:inputstream.adaptive.stream_headers=User-Agent='.$ua.PHP_EOL;
+                echo '#EXTGRP:PLUTO TV'.PHP_EOL;
+                echo '#EXTVLCOPT:http-referrer='.$dirname.PHP_EOL;
+                echo '#EXTVLCOPT:network-caching=1000'.PHP_EOL;
+                echo '#EXTVLCOPT:audio-track="es-ES"'.PHP_EOL;
+                echo '#EXTVLCOPT:http-user-agent='.$ua.PHP_EOL;
+                echo '#EXTVLCOPT--http-reconnect=true'.PHP_EOL;
+                echo '#EXTINF:-1 "tvg-name="'.$title.'" tvg-logo="'.$images.'",'.$name.PHP_EOL;
+                echo '#EXTINF:-1 type="stream" channelId="'.$id.'", group-title="PLUTO TV" group-logo="'.$group_logo.'"  tvg-logo="'.$images.'","'.$region.'-'.$name.'"'.PHP_EOL;
+                echo $server."?play_live=".$stitcher."/".$version.$stitched_m3u8.PHP_EOL;
             }
         } else {
         echo "Error al realizar la solicitud.";
