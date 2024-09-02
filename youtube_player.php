@@ -168,7 +168,6 @@ if (empty($_SERVER['QUERY_STRING'])) {
 
 // Procesar QUERY_STRING para obtener la ID del canal de YouTube
 if (preg_match($id_ext_reg, $_SERVER['QUERY_STRING'], $matches)) {
-   arch_php($_SERVER['QUERY_STRING']); 
     // Extraer el dominio de la URL
     $dominio = parse_url($_SERVER['QUERY_STRING'], PHP_URL_HOST);
         // Cabeceras HTTP que quieres enviar
