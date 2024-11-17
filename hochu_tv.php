@@ -56,8 +56,8 @@ if(isset($_GET['ts'])){
 			'Connection: keep-alive',
 			'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0',
 			'Accept: */*',
-			'Origin: http://cdnneedtv.ru',
-			'Referer: http://cdnneedtv.ru/',
+			'Origin: http://cdntvpotok.com',
+			'Referer: http://cdntvpotok.com/',
 			'Accept-Encoding: gzip, deflate',
 			'Accept-Language: es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
 		];
@@ -77,7 +77,7 @@ $headers = [
 
 $ch_id = $_SERVER['QUERY_STRING'];
 
-		$url = 'http://cdnneedtv.ru/hochu/'.$ch_id.'.php';
+		$url = 'http://cdntvpotok.com/hochu/'.$ch_id.'.php';
 		$response = fetchWithCurl($url, $headers);
 		$server= "https://".$_SERVER["HTTP_HOST"].$_SERVER['PHP_SELF'];
 		$pattern = '/file:"((http:\/\/[\d\.]+:\d+\/(?:[^\/]+)\/)index\.m3u8\?wmsAuthSign=[^"]+)"/';
