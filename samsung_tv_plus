@@ -1,0 +1,313 @@
+<?php
+//*****************************************************
+// Cortesía de:"@M3uKodi Telegram Group"
+// Fecha : 10/12/2024
+// WebSite:https://www.m3ukodi.com
+// Mail:m3ukodi@m3ukodi.com
+// Donaciones:https://paypal.me/m3ukodi?locale.x=es_XC
+//**************************************
+
+// Configuración de reporte y registro de errores
+error_reporting(E_ERROR | E_WARNING | E_PARSE); // Mostrar solo errores, advertencias y errores de análisis
+ini_set("log_errors", 1); // Habilitar el registro de errores
+ini_set("error_log", __DIR__ . "/errores.log"); // Especificar el archivo de registro de errores
+ini_set("display_errors", 1); // Mostrar errores en la salida
+
+// Configuración de límites y tiempos de ejecución
+@ini_set("memory_limit", "1024M"); // Establecer límite de memoria a 1024M
+@ini_set('upload_max_filesize', '500M'); // Límite máximo de tamaño de archivo para subir a 500M
+@ini_set('post_max_size', '5000M'); // Límite máximo del tamaño de datos POST a 5000M
+@ini_set('max_input_time', 300); // Tiempo máximo de entrada permitido
+@ini_set('max_execution_time', 0); // Tiempo máximo de ejecución del script (0 significa sin límite)
+@ini_set('output_buffering', 'Off'); // Desactivar el almacenamiento en búfer de salida
+@ini_set('implicit_flush', 1); // Activar el vaciado implícito
+@ini_set('zlib.output_compression', 0); // Desactivar la compresión de salida zlib
+@ini_set('default_socket_timeout', 20); // Establecer tiempo de espera predeterminado del socket a 20 segundos
+
+set_time_limit(60 * 5); // Establecer límite de tiempo de ejecución del script a 5 minutos
+ignore_user_abort(true); // Ignorar la desconexión del usuario
+clearstatcache(); // Limpiar la caché de estado de archivos
+
+// Iniciar una nueva sesión y destruir cualquier sesión anterior
+session_start();
+session_unset();
+session_destroy();
+
+// Configuración de encabezados HTTP
+header("X-Robots-Tag: noindex, nofollow", true); // Indicar a los robots que no indexen ni sigan
+header("Content-Type: text/plain; charset=UTF-8"); // Establecer el tipo de contenido como texto plano con codificación UTF-8
+header("Expires: Mon, 20 Dec 1998 01:00:00 GMT"); // Establecer fecha de caducidad
+header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); // Fecha de última modificación
+header("Cache-Control: no-cache, must-revalidate"); // Control de caché
+header("Pragma: no-cache"); // Desactivar el almacenamiento en caché
+header('Access-Control-Allow-Origin: *'); // Permitir acceso a todos los orígenes
+header('Access-Control-Allow-Headers: origin,range,accept,accept-encoding,referer,content-type, SOAPAction,X-AxDRM-Message'); // Permitir estos encabezados
+header('Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST'); // Permitir estos métodos
+header('Access-Control-Expose-Headers: server,range,content-range,content-length,content-type'); // Exponer estos encabezados
+
+// Definir rutas y variables globales
+define('PORT', 80);
+define('REGION_ALL', 'all');
+
+define('PLAYLIST_PATH', 'playlist.m3u8');
+define('EPG_PATH', 'epg.xml');
+define('CLEAR_CACHE_PATH', 'clear_cache');
+define('APP_URL', 'https://i.mjh.nz/SamsungTVPlus/.channels.json.gz');
+define('EPG_URL', 'https://i.mjh.nz/SamsungTVPlus/{region}.xml.gz');
+define('PLAYBACK_URL', 'https://jmp2.uk/sam-{id}.m3u8');
+define('TIMEOUT', 20); // Timeout en segundos
+define('CACHE_TIME', 300); // 5 minutos por defecto
+define('CHUNKSIZE', 1024); // Tamaño de los chunks
+
+
+// Ruta del directorio de caché (se puede cambiar si lo deseas)
+$cache_dir = __DIR__ . '/cache';
+
+if (!file_exists($cache_dir)) {
+    // Intentar crear el directorio, y manejar cualquier error
+    if (!mkdir($cache_dir, 0777, true)) {
+        // Mostrar un mensaje de error si no se puede crear el directorio
+        $error = error_get_last();
+        die('Error al crear el directorio: ' . $error['message']);
+    }
+}
+// Verificar si el archivo .htaccess no existe y ejecutar la función para crearlo
+$htaccess_path = __DIR__ . '/.htaccess'; // Ruta donde se guardará el archivo .htaccess
+
+// Si el archivo no existe, lo crea
+if (!file_exists($htaccess_path)) {
+    create_htaccess(); // Llama a la función para crear el archivo .htaccess
+}
+
+function create_htaccess() {
+    $htaccess_path = __DIR__ . '/.htaccess'; // Ruta donde se guardará el archivo .htaccess (en el directorio actual)
+
+    // Verifica si el archivo .htaccess ya existe
+    if (!file_exists($htaccess_path)) {
+        // Contenido que quieres que tenga el archivo .htaccess
+        $htaccess_content = <<<EOT
+                        RewriteEngine On
+                        RewriteBase /root/samsungtvplus/
+                        RewriteRule ^(.*)$ index.php [QSA,L]
+                    EOT;
+        // Escribe el contenido al archivo .htaccess
+        file_put_contents($htaccess_path, $htaccess_content);
+
+        echo "El archivo .htaccess ha sido creado exitosamente.\n";
+    } else {
+        echo "El archivo .htaccess ya existe.\n";
+    }
+}
+
+// Función para obtener datos de la API de canales
+function get_app_data() {
+    global $cache_dir;
+
+    // Ruta de la caché (usando la URL codificada en base64)
+    $cache_path = $cache_dir . '/' . base64_encode(APP_URL);
+
+    // Verificar si ya existe una versión en caché y si no ha caducado
+    if (file_exists($cache_path) && (filemtime($cache_path) + CACHE_TIME > time())) {
+        return json_decode(file_get_contents($cache_path), true);
+    }
+
+    // Descargar el archivo comprimido
+    $response = @file_get_contents(APP_URL);
+    if ($response === FALSE) {
+        error_log("Error al obtener datos de " . APP_URL);
+        die("Error al obtener datos de la API.");
+    }
+
+    // Descomprimir el archivo .gz
+    $data = json_decode(gzdecode($response), true);
+    if ($data === NULL) {
+        error_log("Error al decodificar el archivo JSON.");
+        die("Error al decodificar el archivo JSON.");
+    }
+
+    // Guardar los datos descomprimidos en la caché
+    file_put_contents($cache_path, json_encode($data));
+
+    return $data;
+}
+function serve_playlist($params) {
+    $all_channels = get_app_data()['regions'];
+    $regions = isset($params['regions']) ? explode(',', $params['regions']) : [REGION_ALL];
+    $groups = isset($params['groups']) ? explode(',', $params['groups']) : [];
+    $start_chno = isset($params['start_chno']) ? (int)$params['start_chno'] : null;
+    $sort = isset($params['sort']) ? $params['sort'] : 'chno';
+
+    echo "#EXTM3U\n";
+
+    // Si $regions contiene 'all', no filtramos por regiones
+    $channels = [];
+    if (in_array('all', $regions)) {
+        // Agregar todos los canales de todas las regiones
+        foreach ($all_channels as $region => $region_data) {
+            $channels = array_merge($channels, $region_data['channels']);
+        }
+    } else {
+        // Si no es 'all', filtramos por las regiones especificadas
+        foreach ($regions as $region) {
+            if (isset($all_channels[$region])) {
+                $channels = array_merge($channels, $all_channels[$region]['channels']);
+            }
+        }
+    }
+
+    // Si hay un parámetro 'groups', filtramos los canales por los grupos especificados
+    if (!empty($groups)) {
+        $channels = array_filter($channels, function($channel) use ($groups) {
+            return in_array(strtolower($channel['group']), array_map('strtolower', $groups));
+        });
+    }
+
+    // Ordenar los canales según el parámetro 'sort' (por número de canal o nombre)
+    uasort($channels, function($a, $b) use ($sort) {
+        if ($sort == 'chno') {
+            return $a['chno'] <=> $b['chno'];
+        }
+        return strcmp(strtolower($a['name']), strtolower($b['name']));
+    });
+
+    // Mostrar la lista de canales
+    foreach ($channels as $key => $channel) {
+        if (isset($params['exclude']) && in_array($key, explode(',', $params['exclude']))) {
+            continue;
+        }
+        if (isset($params['include']) && !in_array($key, explode(',', $params['include']))) {
+            continue;
+        }
+
+        $chno = $start_chno ? 'tvg-chno="' . $start_chno . '"' : '';
+        if ($start_chno) {
+            $start_chno++;
+        }
+
+      // Reemplazar {id} en la URL con el valor de $key
+            $playback_url = str_replace('{id}', $key, PLAYBACK_URL);
+
+            // Definir el nombre del grupo y los logos
+            $groups_m3u = "SAMSUNG TV PLUS";
+            $group_logo = "https://www.google.com/s2/favicons?domain=samsung.com&sz=256";
+            // Construcción del archivo M3U
+            $m3u_content = "#EXTGRP:{$groups_m3u}\n";
+            $m3u_content .= "#EXTVLCOPT:network-caching=1000\n";
+
+            // Si el logo está vacío, usamos un logo por defecto en su lugar
+            $tvg_logo = !empty($channel['logo']) ? $channel['logo'] : 'https://tinyurl.com/logom3ukodi';
+
+            // Construir la entrada de M3U con todos los parámetros
+            $m3u_content .= "#EXTINF:-1 channel-id=\"samsung-$key\" tvg-id=\"$key\" tvg-logo=\"$tvg_logo\" group-logo=\"$group_logo\" group-title=\"{$groups_m3u}\" $chno,{$channel['group']}|{$channel['name']}\n";
+            $m3u_content .= $playback_url . "\n";
+
+            // Imprimir el contenido de la lista de reproducción M3U
+            echo $m3u_content;
+
+    }
+}
+
+// Función para servir el archivo EPG (guía electrónica de programas)
+function serve_epg($params) {
+    $region = isset($params['regions']) ? $params['regions'] : REGION_ALL;
+    $url = str_replace('{region}', $region, EPG_URL);
+
+    $cache_path = sys_get_temp_dir() . '/' . base64_encode($url);
+    if (file_exists($cache_path)) {
+        header('Content-Type: application/xml');
+        echo file_get_contents($cache_path);
+        return;
+    }
+
+    $response = file_get_contents($url);
+    if ($response === FALSE) {
+        die("Error al obtener el archivo EPG desde $url");
+    }
+
+    $xml = gzdecode($response);
+
+    file_put_contents($cache_path, $xml);
+
+    header('Content-Type: application/xml');
+    echo $xml;
+}
+
+// Limpiar caché
+function clear_cache() {
+    global $cache_dir;
+    array_map('unlink', glob("$cache_dir/*"));
+    echo "Cache cleared\n";
+}
+// Función para manejar las solicitudes HTTP
+function handle_request() {
+       // Obtener la URL completa (protocolo, dominio y ruta)
+    $server = "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $params = [];
+    parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $params);
+
+    // Definir prefijo de ruta (si tu aplicación está en un subdirectorio)
+    $base_path = dirname($_SERVER['PHP_SELF']);
+
+    // Asegurarse de que las rutas coincidan correctamente
+    switch (true) {
+        case strpos($path, $base_path . '/' . PLAYLIST_PATH) === 0: //http://tu-dominio.com/playlist.m3u8?regions=us&groups=News
+            serve_playlist($params);
+            break;
+        case strpos($path, $base_path . '/' . EPG_PATH) === 0: //http://tu-dominio.com/epg.xml?regions=us
+            serve_epg($params);
+            break;
+        case strpos($path, $base_path . '/' . CLEAR_CACHE_PATH) === 0: //http://tu-dominio.com/clear_cache
+            clear_cache();
+            break;
+       default:
+            header("HTTP/1.0 404 Not Found");
+            echo "Código: 404 Not Found\n\n";
+
+            echo "Ejemplo de Uso:\n";
+            echo "Las siguientes solicitudes podrían funcionar:\n\n";
+            echo "  ".$server."playlist.m3u8?regions=es&groups=News\n";
+            echo "  ".$server."epg.xml?regions=us\n";
+            echo "  ".$server."clear_cache\n\n";
+
+            echo "Parámetros de la URL:\n\n";
+
+            // regions
+            echo "regions\n";
+            echo "  Las regiones de los canales que deseas incluir.\n";
+            echo "  Sustituye la variable de entorno REGIONS si está presente.\n\n";
+            echo "  Ejemplo: /playlist.m3u8?regions=us,ca\n";
+            echo "  Regiones Disponibles: at, ca, ch, de, es, fr, gb, in, it, kr, us\n\n";
+
+            // groups
+            echo "groups\n";
+            echo "  Los grupos que deseas incluir.\n";
+            echo "  Sustituye la variable de entorno GROUPS si está presente.\n\n";
+            echo "  Ejemplo: /playlist.m3u8?regions=us&groups=Kids,Comedy\n\n";
+
+            // start_chno
+            echo "start_chno\n";
+            echo "  Un número de canal desde el cual deseas comenzar a numerar los canales.\n";
+            echo "  Ejemplo: /playlist.m3u8?start_chno=50\n\n";
+
+            // include
+            echo "include\n";
+            echo "  Lista separada por comas de los channel-id que SÓLO deseas incluir en la lista de reproducción.\n";
+            echo "  Ejemplo: /playlist.m3u8?include=samsung-USBB2900003O3,samsung-US26000201N\n\n";
+
+            // exclude
+            echo "exclude\n";
+            echo "  Lista separada por comas de los channel-id que NO deseas incluir en la lista de reproducción.\n";
+            echo "  Ejemplo: /playlist.m3u8?exclude=samsung-USBB2900003O3,samsung-US26000201N\n\n";
+
+            // Combinación de parámetros
+            echo "Y por supuesto, puedes combinar los parámetros de la consulta:\n";
+            echo "  Ejemplo: /playlist.m3u8?start_chno=50&include=samsung-USBB2900003O3&exclude=samsung-US26000201N\n";
+
+            break;
+    }
+}
+
+// Llamar al enrutador para manejar la solicitud
+handle_request();
+?>
