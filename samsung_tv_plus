@@ -45,9 +45,6 @@ header('Access-Control-Allow-Headers: origin,range,accept,accept-encoding,refere
 header('Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST'); // Permitir estos métodos
 header('Access-Control-Expose-Headers: server,range,content-range,content-length,content-type'); // Exponer estos encabezados
 
-require './../../developer/config/country.php';
-require './../../developer/config/arch_php.php';
-
 // Definir rutas y variables globales
 define('PORT', 80);
 define('REGION_ALL', 'all');
@@ -142,7 +139,7 @@ function serve_playlist($params) {
     $groups = isset($params['groups']) ? explode(',', $params['groups']) : [];
     $start_chno = isset($params['start_chno']) ? (int)$params['start_chno'] : null;
     $sort = isset($params['sort']) ? $params['sort'] : 'chno';
-    arch_php();
+
     echo "#EXTM3U\n";
 
     // Si $regions contiene 'all', no filtramos por regiones
