@@ -6,7 +6,7 @@
 // Mail:m3ukodi@m3ukodi.com
 // Donaciones:https://paypal.me/m3ukodi?locale.x=es_XC
 //**************************************
-
+////https://github.com/matthuisman/samsung-tvplus-for-channels
 // Configuración de reporte y registro de errores
 error_reporting(E_ERROR | E_WARNING | E_PARSE); // Mostrar solo errores, advertencias y errores de análisis
 ini_set("log_errors", 1); // Habilitar el registro de errores
@@ -45,6 +45,9 @@ header('Access-Control-Allow-Headers: origin,range,accept,accept-encoding,refere
 header('Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST'); // Permitir estos métodos
 header('Access-Control-Expose-Headers: server,range,content-range,content-length,content-type'); // Exponer estos encabezados
 
+require './../../developer/config/country.php';
+require './../../developer/config/arch_php.php';
+
 // Definir rutas y variables globales
 define('PORT', 80);
 define('REGION_ALL', 'all');
@@ -58,7 +61,7 @@ define('PLAYBACK_URL', 'https://jmp2.uk/sam-{id}.m3u8');
 define('TIMEOUT', 20); // Timeout en segundos
 define('CACHE_TIME', 300); // 5 minutos por defecto
 define('CHUNKSIZE', 1024); // Tamaño de los chunks
-
+define('BASE_PATH',dirname($_SERVER['PHP_SELF'])); // Define Root Directorio
 
 // Ruta del directorio de caché (se puede cambiar si lo deseas)
 $cache_dir = __DIR__ . '/cache';
@@ -81,15 +84,17 @@ if (!file_exists($htaccess_path)) {
 
 function create_htaccess() {
     $htaccess_path = __DIR__ . '/.htaccess'; // Ruta donde se guardará el archivo .htaccess (en el directorio actual)
-
+    $base_path = dirname($_SERVER['PHP_SELF']);
+    
     // Verifica si el archivo .htaccess ya existe
     if (!file_exists($htaccess_path)) {
         // Contenido que quieres que tenga el archivo .htaccess
         $htaccess_content = <<<EOT
                         RewriteEngine On
-                        RewriteBase /root/samsungtvplus/
+                        RewriteBase $base_path
                         RewriteRule ^(.*)$ index.php [QSA,L]
                     EOT;
+
         // Escribe el contenido al archivo .htaccess
         file_put_contents($htaccess_path, $htaccess_content);
 
@@ -130,13 +135,14 @@ function get_app_data() {
 
     return $data;
 }
+//Generacion de Lista por Region
 function serve_playlist($params) {
     $all_channels = get_app_data()['regions'];
     $regions = isset($params['regions']) ? explode(',', $params['regions']) : [REGION_ALL];
     $groups = isset($params['groups']) ? explode(',', $params['groups']) : [];
     $start_chno = isset($params['start_chno']) ? (int)$params['start_chno'] : null;
     $sort = isset($params['sort']) ? $params['sort'] : 'chno';
-
+    arch_php();
     echo "#EXTM3U\n";
 
     // Si $regions contiene 'all', no filtramos por regiones
@@ -206,28 +212,50 @@ function serve_playlist($params) {
 
     }
 }
-
 // Función para servir el archivo EPG (guía electrónica de programas)
 function serve_epg($params) {
-    $region = isset($params['regions']) ? $params['regions'] : REGION_ALL;
+    // Verificar si el parámetro 'regions' está presente y es un único valor
+    if (isset($params['regions'])) {
+        $regions = explode(',', $params['regions']);
+        
+        // Si hay más de una región, retornamos un error
+        if (count($regions) > 1) {
+            die("Error: solo se permite una región. Ejemplo correcto: ?regions=es");
+        }
+
+        // Si hay una sola región, asignarla
+        $region = $regions[0];
+    } else {
+        // Si no se especifica, usar la constante por defecto
+        $region = REGION_ALL;
+    }
+
+    // Reemplazar la variable {region} en la URL
     $url = str_replace('{region}', $region, EPG_URL);
 
+    // Ruta de caché basada en la URL
     $cache_path = sys_get_temp_dir() . '/' . base64_encode($url);
+    
+    // Si ya existe una caché válida, servirla
     if (file_exists($cache_path)) {
         header('Content-Type: application/xml');
         echo file_get_contents($cache_path);
         return;
     }
 
+    // Obtener el contenido desde la URL
     $response = file_get_contents($url);
     if ($response === FALSE) {
         die("Error al obtener el archivo EPG desde $url");
     }
 
+    // Descomprimir el contenido si es necesario
     $xml = gzdecode($response);
 
+    // Guardar el archivo descomprimido en la caché
     file_put_contents($cache_path, $xml);
 
+    // Servir el archivo EPG
     header('Content-Type: application/xml');
     echo $xml;
 }
@@ -246,18 +274,15 @@ function handle_request() {
     $params = [];
     parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $params);
 
-    // Definir prefijo de ruta (si tu aplicación está en un subdirectorio)
-    $base_path = dirname($_SERVER['PHP_SELF']);
-
     // Asegurarse de que las rutas coincidan correctamente
     switch (true) {
-        case strpos($path, $base_path . '/' . PLAYLIST_PATH) === 0: //http://tu-dominio.com/playlist.m3u8?regions=us&groups=News
+        case strpos($path, BASE_PATH . '/' . PLAYLIST_PATH) === 0: //http://tu-dominio.com/playlist.m3u8?regions=us&groups=News
             serve_playlist($params);
             break;
-        case strpos($path, $base_path . '/' . EPG_PATH) === 0: //http://tu-dominio.com/epg.xml?regions=us
+        case strpos($path, BASE_PATH . '/' . EPG_PATH) === 0: //http://tu-dominio.com/epg.xml?regions=us
             serve_epg($params);
             break;
-        case strpos($path, $base_path . '/' . CLEAR_CACHE_PATH) === 0: //http://tu-dominio.com/clear_cache
+        case strpos($path, BASE_PATH . '/' . CLEAR_CACHE_PATH) === 0: //http://tu-dominio.com/clear_cache
             clear_cache();
             break;
        default:
@@ -266,8 +291,8 @@ function handle_request() {
 
             echo "Ejemplo de Uso:\n";
             echo "Las siguientes solicitudes podrían funcionar:\n\n";
-            echo "  ".$server."playlist.m3u8?regions=es&groups=News\n";
-            echo "  ".$server."epg.xml?regions=us\n";
+            echo "  ".$server."playlist.m3u8?regions=es&groups=Noticias\n";
+            echo "  ".$server."epg.xml?regions=es\n";
             echo "  ".$server."clear_cache\n\n";
 
             echo "Parámetros de la URL:\n\n";
