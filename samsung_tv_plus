@@ -195,13 +195,11 @@ function serve_playlist($params) {
             $group_logo = "https://www.google.com/s2/favicons?domain=samsung.com&sz=256";
             // Construcción del archivo M3U
             $m3u_content = "#EXTGRP:{$groups_m3u}\n";
-            $m3u_content .= "#EXTVLCOPT:network-caching=1000\n";
-
             // Si el logo está vacío, usamos un logo por defecto en su lugar
             $tvg_logo = !empty($channel['logo']) ? $channel['logo'] : 'https://tinyurl.com/logom3ukodi';
 
             // Construir la entrada de M3U con todos los parámetros
-            $m3u_content .= "#EXTINF:-1 channel-id=\"samsung-$key\" tvg-id=\"$key\" tvg-logo=\"$tvg_logo\" group-logo=\"$group_logo\" group-title=\"{$groups_m3u}\" $chno,{$channel['group']}|{$channel['name']}\n";
+            $m3u_content .= "#EXTINF:-1 channel-id=\"samsung-$key\" tvg-id=\"$key\" tvg-logo=\"$tvg_logo\" group-logo=\"$group_logo\" group-title=\"{$groups_m3u}\" $chno,{$channel['group']}-{$channel['name']}\n";
             $m3u_content .= $playback_url . "\n";
 
             // Imprimir el contenido de la lista de reproducción M3U
