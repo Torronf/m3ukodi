@@ -89,7 +89,7 @@ function create_htaccess() {
         $htaccess_content = <<<EOT
                         RewriteEngine On
                         RewriteBase $base_path
-                        RewriteRule ^(.*)$ index.php [QSA,L]
+                        RewriteRule ^(?!.*\.php$)(.*)$ $base_path/index.php [QSA,L]
                     EOT;
 
         // Escribe el contenido al archivo .htaccess
