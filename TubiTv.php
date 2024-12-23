@@ -45,9 +45,6 @@ header('Access-Control-Allow-Headers: origin,range,accept,accept-encoding,refere
 header('Access-Control-Allow-Methods: GET,HEAD,OPTIONS,POST'); // Permitir estos metodos
 header('Access-Control-Expose-Headers: server,range,content-range,content-length,content-type'); // Exponer estos encabezados
 
-require './../../developer/config/country.php';
-require './../../developer/config/arch_php.php';
-
 // Definir rutas y variables globales
 define('PLAYLIST_PATH', 'playlist.m3u8');
 define('EPG_PATH', 'epg.xml');
@@ -250,7 +247,7 @@ function new_cache($params) {
 }
 
 function serve_playlist($params) {
-    arch_php();
+
     global $cache_dir;
 
     // Ruta de la cache (usando la URL codificada en base64)
